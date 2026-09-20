@@ -1,0 +1,16 @@
+# Always check out text files with CRLF line endings
+* text=auto eol=crlf
+
+# Scripts that run inside Linux containers must stay LF
+*.sh text eol=lf
+
+# Binaries
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.mp4 binary
+*.pt binary
