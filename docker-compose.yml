@@ -13,12 +13,21 @@ services:
       timeout: 5s
       retries: 10
 
+  # One-shot job: applies database migrations, then exits. The seed step is added here later.
+  migrate:
+    build: ./backend
+    env_file: .env
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      db:
+        condition: service_healthy
+
   backend:
     build: ./backend
     env_file: .env
     depends_on:
-      db:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     volumes:
       - media:/app/media
     healthcheck:
