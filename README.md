@@ -24,11 +24,13 @@ To stop, press Ctrl+C and then run: docker compose down
 
 A migration is a versioned change to the database structure (tables and columns). The database remembers which migrations it has already applied, so applying them again does nothing.
 
-Seeding fills the database with starting data, such as the cities and the demo players. Seeding is safe to repeat. It only adds what is missing and never resets existing data such as player balances. The seed script is not written yet; it will be added to the same step.
+Seeding fills the database with starting data: the five cities (Las Vegas, Belgrade, Berlin, Moscow, Tokyo) and the demo players demo1, demo2 and demo3. Each demo player gets the starting credits and the password from DEMO_PLAYER_PASSWORD in your .env file. Seeding is safe to repeat. It only adds what is missing and never resets existing data such as player balances or edited cities. The cities are listed in backend/app/seed/cities.yaml; to add a city, append it there and start again. Placeholder clips are not seeded yet.
 
-Both run automatically. When you run docker compose up, a short job called migrate applies any new migrations and then exits. The backend starts only after that job succeeded. If a migration fails, the backend does not start, and you can read the reason with: docker compose logs migrate
+Both run automatically. When you run docker compose up, a short job called migrate applies any new migrations and exits, then a short job called seed adds the missing starting data and exits. The backend starts only after both succeeded. If one fails, the backend does not start, and you can read the reason with: docker compose logs migrate or docker compose logs seed
 
 To run the migrations by hand, with the database running: docker compose run --rm migrate
+
+To run the seed by hand: docker compose run --rm seed
 
 To see which version the database is on: docker compose run --rm migrate alembic current
 

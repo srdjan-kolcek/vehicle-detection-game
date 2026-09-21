@@ -8,6 +8,7 @@ class Settings:
     jwt_secret: str
     jwt_ttl_s: int
     demo_start_credits: int  # whole credits; the wallet stores minor units (x 100)
+    demo_player_password: str
 
 
 def get_settings() -> Settings:
@@ -16,4 +17,5 @@ def get_settings() -> Settings:
         jwt_secret=os.environ.get("JWT_SECRET", "dev-only-change-me"),
         jwt_ttl_s=int(os.environ.get("JWT_TTL_S", "3600")),
         demo_start_credits=int(os.environ.get("DEMO_START_CREDITS", "1000")),
+        demo_player_password=os.environ.get("DEMO_PLAYER_PASSWORD", "demo1234"),
     )
