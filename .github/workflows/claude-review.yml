@@ -1,0 +1,58 @@
+name: Claude code review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+# Read-only by default; the job below adds only what the review needs.
+permissions:
+  contents: read
+
+concurrency:
+  group: claude-review-${{ github.event.pull_request.number }}
+  # A new push makes the previous review out of date.
+  cancel-in-progress: true
+
+jobs:
+  review:
+    name: Review pull request
+    runs-on: ubuntu-latest
+    # Forks and Dependabot do not get repository secrets, so skip them.
+    # Drafts are skipped until they are marked ready for review.
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.actor != 'dependabot[bot]' &&
+      !github.event.pull_request.draft
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: write
+      # Needed by the action to authenticate with GitHub.
+      id-token: write
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4.2.2
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Claude review
+        uses: anthropics/claude-code-action@v1.0.232
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          track_progress: true
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+
+            Review this pull request for a betting-game demo (FastAPI backend, React frontend, CV pipeline, Docker).
+            Focus on correctness bugs, wallet and ledger integrity (no double spend, no negative balance, idempotent seeding),
+            security (secrets, auth, injection), and Docker or workflow mistakes.
+            Do not comment on style or formatting. Only report issues you are confident about.
+            Post specific findings as inline comments and finish with one short summary comment.
+            If there is nothing worth reporting, say so in one line.
+          claude_args: |
+            --model claude-sonnet-5
+            --effort high
+            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"
