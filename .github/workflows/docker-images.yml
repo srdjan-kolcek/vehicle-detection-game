@@ -21,8 +21,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      # Write access only where we publish; pull requests get read.
-      packages: ${{ github.event_name == 'push' && 'write' || 'read' }}
+      # Needed to push to ghcr.io; publish steps are skipped on pull requests.
+      packages: write
     strategy:
       fail-fast: false
       matrix:
