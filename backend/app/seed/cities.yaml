@@ -1,0 +1,44 @@
+# Cities seeded on first start. Append to add more; existing rows are never changed.
+# line_l is a placeholder until the real line is computed from each city's clip pool (doc 03).
+# Stakes are minor units (credits x 100): 100 = 1 credit.
+cities:
+  - slug: las_vegas
+    name_key: cities.las_vegas
+    lat: 36.1699
+    lng: -115.1398
+    theme_key: vegas
+    line_l: 10
+    min_stake: 100
+    max_stake: 50000
+  - slug: belgrade
+    name_key: cities.belgrade
+    lat: 44.7866
+    lng: 20.4489
+    theme_key: belgrade
+    line_l: 10
+    min_stake: 100
+    max_stake: 50000
+  - slug: berlin
+    name_key: cities.berlin
+    lat: 52.52
+    lng: 13.405
+    theme_key: berlin
+    line_l: 10
+    min_stake: 100
+    max_stake: 50000
+  - slug: moscow
+    name_key: cities.moscow
+    lat: 55.7558
+    lng: 37.6173
+    theme_key: moscow
+    line_l: 10
+    min_stake: 100
+    max_stake: 50000
+  - slug: tokyo
+    name_key: cities.tokyo
+    lat: 35.6762
+    lng: 139.6503
+    theme_key: tokyo
+    line_l: 10
+    min_stake: 100
+    max_stake: 50000

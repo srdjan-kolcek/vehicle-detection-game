@@ -13,12 +13,30 @@ services:
       timeout: 5s
       retries: 10
 
+  # One-shot job: applies database migrations, then exits.
+  migrate:
+    build: ./backend
+    env_file: .env
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # One-shot job: adds the cities and demo players that are missing, then exits. Safe to repeat.
+  seed:
+    build: ./backend
+    env_file: .env
+    command: ["python", "-m", "app.seed"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
   backend:
     build: ./backend
     env_file: .env
     depends_on:
-      db:
-        condition: service_healthy
+      seed:
+        condition: service_completed_successfully
     volumes:
       - media:/app/media
     healthcheck:
