@@ -58,3 +58,17 @@ The schema tests need a scratch PostgreSQL database. They wipe that database eac
 The YOLOv9 checkpoint weights/yolov9_vehicle_detection_best.pt is not in the repository. It is gitignored and has to be copied in by hand on each machine. The same goes for the datasets in data/ and the generated clips in media/.
 
 None of it is needed yet. The app starts and runs without the weights or any dataset.
+
+## Automatic Claude code review on pull requests
+
+Every pull request from a branch in this repository is reviewed by Claude. The workflow is .github/workflows/claude-review.yml. It posts inline comments on the changed lines and one short summary comment. It is skipped for drafts, for forks and for Dependabot, because those do not have access to repository secrets.
+
+To turn it on, add your Anthropic API key as a repository secret:
+
+1. On GitHub, open the repository, then Settings, then Secrets and variables, then Actions.
+
+2. Click New repository secret.
+
+3. Name it ANTHROPIC_API_KEY, paste the key as the value, and save. The key is never stored in the repository or in .env.example.
+
+To read the results, open the pull request and look at the Conversation and Files changed tabs for Claude's comments. If the review did not run or failed, open the Checks tab and click "Claude code review" to read the log. The review is advisory: it comments but does not block merging.

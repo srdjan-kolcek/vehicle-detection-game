@@ -1,2 +1,9 @@
 node_modules/
 dist/
+.env
+.env.*
+!.env.example
+*.pt
+*.pth
+*.onnx
+*.mp4
