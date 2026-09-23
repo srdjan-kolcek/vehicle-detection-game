@@ -153,6 +153,50 @@ async def test_topup_credits_and_records_a_topup_entry(migrated_engine, session)
     ]
 
 
+async def test_rehydrate_credits_the_amount_and_records_a_topup_entry(migrated_engine, session):
+    player_id, _ = _setup(migrated_engine, balance=100)
+    wallet = VirtualWallet(session)
+    assert await wallet.rehydrate(player_id, 100000) == 100100
+    await session.commit()
+    assert await _ledger(session, player_id) == [("topup", 100000, 100100)]
+
+
+async def test_rehydrate_without_cooldown_can_be_called_repeatedly(migrated_engine, session):
+    player_id, _ = _setup(migrated_engine, balance=0)
+    wallet = VirtualWallet(session)
+    await wallet.rehydrate(player_id, 100000)
+    await wallet.rehydrate(player_id, 100000)
+    await session.commit()
+    assert await wallet.get_balance(player_id) == 200000
+
+
+async def test_rehydrate_rejects_a_second_call_within_the_cooldown(migrated_engine, session):
+    player_id, _ = _setup(migrated_engine, balance=0)
+    wallet = VirtualWallet(session)
+    await wallet.rehydrate(player_id, 100000, cooldown_s=60)
+    await session.commit()
+    with pytest.raises(AppError) as err:
+        await wallet.rehydrate(player_id, 100000, cooldown_s=60)
+    assert err.value.code == "REHYDRATE_COOLDOWN"
+    assert 0 < err.value.params["retry_after_s"] <= 60
+    await session.rollback()
+    assert await wallet.get_balance(player_id) == 100000
+
+
+async def test_rehydrate_ignores_a_stale_cooldown_from_a_different_call(migrated_engine, session):
+    """A cooldown set on this call only looks at the last *topup*; a fresh player has none yet."""
+    player_id, _ = _setup(migrated_engine, balance=0)
+    wallet = VirtualWallet(session)
+    assert await wallet.rehydrate(player_id, 100000, cooldown_s=60) == 100000
+
+
+@pytest.mark.parametrize("amount", [0, -100])
+async def test_rehydrate_rejects_non_positive_amount(migrated_engine, session, amount):
+    player_id, _ = _setup(migrated_engine, balance=0)
+    with pytest.raises(ValueError):
+        await VirtualWallet(session).rehydrate(player_id, amount)
+
+
 async def test_unknown_player_has_no_wallet(session, migrated_engine):
     with pytest.raises(LookupError):
         await VirtualWallet(session).get_balance(uuid.uuid4())

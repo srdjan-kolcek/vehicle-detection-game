@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime, timezone
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -69,6 +70,25 @@ class VirtualWallet:
         if amount <= 0:
             raise ValueError("top-up must be positive")
         account = await self._lock_account(player_id)
+        self._apply(account, "topup", amount, None)
+        return account.balance
+
+    async def rehydrate(self, player_id: uuid.UUID, amount: Money, cooldown_s: int = 0) -> Money:
+        """Demo-only top-up, gated by an optional cooldown since the player's last one."""
+        if amount <= 0:
+            raise ValueError("rehydrate amount must be positive")
+        account = await self._lock_account(player_id)
+        if cooldown_s > 0:
+            last_topup = await self._session.scalar(
+                select(LedgerEntry.created_at)
+                .where(LedgerEntry.player_id == player_id, LedgerEntry.type == "topup")
+                .order_by(LedgerEntry.id.desc())
+                .limit(1)
+            )
+            if last_topup is not None:
+                elapsed = (datetime.now(timezone.utc) - last_topup).total_seconds()
+                if elapsed < cooldown_s:
+                    raise AppError("REHYDRATE_COOLDOWN", retry_after_s=int(cooldown_s - elapsed))
         self._apply(account, "topup", amount, None)
         return account.balance
 

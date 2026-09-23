@@ -15,6 +15,7 @@ SETTINGS = Settings(
     jwt_ttl_s=3600,
     demo_start_credits=1000,
     demo_player_password="demo-password",
+    rehydrate_cooldown_s=0,
 )
 
 
