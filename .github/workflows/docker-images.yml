@@ -12,7 +12,8 @@ permissions:
 
 concurrency:
   group: docker-images-${{ github.ref }}
-  cancel-in-progress: true
+  # Never cancel a publish run on main or a tag; only superseded PR builds.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   build:
@@ -20,7 +21,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write
+      # Write access only where we publish; pull requests get read.
+      packages: ${{ github.event_name == 'push' && 'write' || 'read' }}
     strategy:
       fail-fast: false
       matrix:
@@ -56,6 +58,7 @@ jobs:
             type=sha
             type=ref,event=branch
             type=ref,event=pr
+            type=ref,event=tag
             type=semver,pattern={{version}}
 
       - name: Build and push
