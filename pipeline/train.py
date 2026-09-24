@@ -7,6 +7,7 @@ only read, never written. One line per epoch is printed and appended to epochs.l
 import csv
 import hashlib
 import json
+import random
 import time
 from datetime import datetime
 from pathlib import Path
@@ -36,6 +37,8 @@ def write_dataset(oversample):
     for row in rows:
         repeat = oversample if row["weather"] in OVERSAMPLED else 1
         lines += [(YOLO_DIR / row["image"]).as_posix()] * repeat
+    # ultralytics' fraction option keeps the first N% of the list, so shuffle (fixed seed) to cover every sequence
+    random.Random(0).shuffle(lines)
     (YOLO_DIR / "train_list.txt").write_text("\n".join(lines) + "\n")
     (YOLO_DIR / "finetune.yaml").write_text(
         f"path: {YOLO_DIR.as_posix()}\ntrain: train_list.txt\nval: images/val\nnames:\n  0: vehicle\n"
@@ -51,6 +54,10 @@ def add_epoch_logger(model):
         state["epoch_start"] = time.time()
 
     def on_epoch_end(trainer):
+        # ultralytics validates best.pt again after the last epoch and fires this callback a second time
+        if state.get("last_epoch") == trainer.epoch:
+            return
+        state["last_epoch"] = trainer.epoch
         metrics = trainer.metrics
         losses = trainer.label_loss_items(trainer.tloss)
         lr = next(iter(trainer.lr.values()), 0.0)
@@ -90,6 +97,7 @@ def train(args):
         "base_weights": str(args.weights),
         "base_weights_sha256": sha256(args.weights),
         "epochs": args.epochs,
+        "patience": args.patience,
         "imgsz": args.imgsz,
         "batch": args.batch,
         "seed": 0,
@@ -107,6 +115,7 @@ def train(args):
     model.train(
         data=str(YOLO_DIR / "finetune.yaml"),
         epochs=args.epochs,
+        patience=args.patience,
         imgsz=args.imgsz,
         batch=args.batch,
         workers=args.workers,
