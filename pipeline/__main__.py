@@ -21,8 +21,28 @@ def main():
     train.add_argument("--name", help="run folder name under data/runs (default: finetune-<timestamp>)")
     train.add_argument("--resume", type=Path, help="path to a last.pt to resume an interrupted run")
 
+    compare = sub.add_parser("val-compare", help="compare two weights on the val split, per weather")
+    compare.add_argument("--new", type=Path, required=True, help="fine-tuned weights, e.g. data/runs/<run>/weights/best.pt")
+    compare.add_argument("--stock", type=Path, default=None, help="default: weights/yolov9_vehicle_detection_best.pt")
+
+    count_eval = sub.add_parser("count-eval", help="count vehicles crossing a line on the 40 Test sequences vs XML ground truth")
+    count_eval.add_argument("--weights", type=Path, required=True, help="weights to evaluate, e.g. data/runs/<run>/weights/best.pt")
+    count_eval.add_argument("--conf", type=float, default=0.5)
+    count_eval.add_argument("--imgsz", type=int, default=640)
+    count_eval.add_argument("--min-side-frames", type=int, default=5,
+                            help="a track only counts if seen this many frames on each side of the line (0 = off)")
+    count_eval.add_argument("--limit", type=int, default=0, help="only run the first N Test sequences (0 = all 40; for smoke tests)")
+
     args = parser.parse_args()
-    if args.command == "yolo-export":
+    if args.command == "val-compare":
+        from . import train as trainer
+        from . import val_compare
+        args.stock = args.stock or trainer.BASE_WEIGHTS
+        val_compare.compare(args)
+    elif args.command == "count-eval":
+        from . import count_eval as counter
+        counter.evaluate(args)
+    elif args.command == "yolo-export":
         from . import yolo_export
         yolo_export.export()
     elif args.command == "yolo-preview":
