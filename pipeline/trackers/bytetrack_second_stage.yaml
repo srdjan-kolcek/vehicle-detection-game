@@ -1,0 +1,12 @@
+# ByteTrack with a working second stage, for conf=0.1. Only confident boxes (>= 0.5) start or
+# first-match a track; boxes from 0.1 to 0.5 only keep an existing track alive.
+# fuse_score is off on purpose: ultralytics multiplies IoU by the box score and then needs more
+# than 0.5 in the second stage, which no box below 0.5 can reach, so with fuse_score on the
+# weak boxes are never used (a run with it on gave exactly the same tracks as conf=0.5).
+tracker_type: bytetrack
+track_high_thresh: 0.5
+track_low_thresh: 0.1
+new_track_thresh: 0.5
+track_buffer: 30
+match_thresh: 0.8
+fuse_score: False

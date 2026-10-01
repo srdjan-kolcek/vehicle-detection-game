@@ -1,0 +1,16 @@
+# BoT-SORT with appearance matching (ReID) and camera motion compensation. ReID compares what two
+# boxes look like, so overlapping or fast vehicles keep their ids; "auto" reuses the detector's own
+# features instead of a second model. Motion compensation helps the UA-DETRAC sequences marked
+# camera_state="unstable". track_buffer 90 as in bytetrack_long.yaml.
+tracker_type: botsort
+track_high_thresh: 0.25
+track_low_thresh: 0.1
+new_track_thresh: 0.25
+track_buffer: 90
+match_thresh: 0.8
+fuse_score: True
+gmc_method: sparseOptFlow
+proximity_thresh: 0.5
+appearance_thresh: 0.8
+with_reid: True
+model: auto
