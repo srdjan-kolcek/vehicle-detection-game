@@ -27,9 +27,16 @@ def main():
 
     count_eval = sub.add_parser("count-eval", help="count vehicles crossing a line on the 40 Test sequences vs XML ground truth")
     count_eval.add_argument("--weights", type=Path, required=True, help="weights to evaluate, e.g. data/runs/<run>/weights/best.pt")
-    count_eval.add_argument("--conf", type=float, default=0.5)
+    count_eval.add_argument("--tracker", default="bytetrack.yaml",
+                            help="ultralytics tracker yaml, or a file name from pipeline/trackers/ (bytetrack_long.yaml, botsort_reid.yaml)")
+    count_eval.add_argument("--conf", type=float, default=0.5,
+                            help="detection threshold before tracking; 0.1 was tested (also with bytetrack_second_stage.yaml) and did not count better")
     count_eval.add_argument("--imgsz", type=int, default=640)
-    count_eval.add_argument("--min-side-frames", type=int, default=5,
+    count_eval.add_argument("--tag", help="output folder under data/runs/count-eval (default: <tracker>-conf<conf>-img<imgsz>)")
+    count_eval.add_argument("--ref-point", type=float, default=0.75,
+                            help="counting point on the box, as a fraction of its height from the top (1 = bottom edge, 0.5 = centre); "
+                                 "0.75 counted best, the bottom edge is pulled down by reflections on wet roads")
+    count_eval.add_argument("--min-side-frames", type=int, default=0,
                             help="a track only counts if seen this many frames on each side of the line (0 = off)")
     count_eval.add_argument("--limit", type=int, default=0, help="only run the first N Test sequences (0 = all 40; for smoke tests)")
 
