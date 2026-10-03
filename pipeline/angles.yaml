@@ -1,0 +1,50 @@
+# City -> camera angles. One angle = one UA-DETRAC Test sequence (a fixed camera), and the angle id
+# is the sequence name. Only Test sequences are used: the Train sequences were used for fine-tuning.
+# Weather is mixed evenly: every city gets 4 night clips, 2-3 rainy and a mix of sunny and cloudy.
+# Clips per sequence are the 30 s windows from frame 1 (remainder dropped).
+# Not used: MVI_39501 and MVI_39511 are shorter than 30 s.
+dataset: ua-detrac
+cities:
+  las_vegas:            # 12 clips: night 4, rainy 3, sunny 2, cloudy 3
+    - MVI_40742         # night, 2
+    - MVI_40743         # night, 2
+    - MVI_40863         # rainy, 2
+    - MVI_40901         # rainy, 1
+    - MVI_39211         # sunny, 2
+    - MVI_40712         # cloudy, 3
+  belgrade:             # 12 clips: night 4, rainy 3, sunny 2, cloudy 3
+    - MVI_40761         # night, 2
+    - MVI_40762         # night, 2
+    - MVI_40864         # rainy, 2
+    - MVI_40902         # rainy, 1
+    - MVI_39271         # sunny, 2
+    - MVI_40853         # cloudy, 2
+    - MVI_40701         # cloudy, 1
+  berlin:               # 12 clips: night 4, rainy 3, sunny 3, cloudy 2
+    - MVI_40763         # night, 2
+    - MVI_40771         # night, 2
+    - MVI_40891         # rainy, 2
+    - MVI_40903         # rainy, 1
+    - MVI_39311         # sunny, 2
+    - MVI_39031         # sunny, 1
+    - MVI_40711         # cloudy, 1
+    - MVI_40714         # cloudy, 1
+  moscow:               # 11 clips: night 4, rainy 3, sunny 2, cloudy 2
+    - MVI_40792         # night, 2
+    - MVI_40793         # night, 2
+    - MVI_40892         # rainy, 2
+    - MVI_40904         # rainy, 1
+    - MVI_39361         # sunny, 2
+    - MVI_40852         # cloudy, 1
+    - MVI_40854         # cloudy, 1
+  tokyo:                # 11 clips: night 4, rainy 2, sunny 3, cloudy 2
+    - MVI_40772         # night, 1
+    - MVI_40773         # night, 1
+    - MVI_40774         # night, 1
+    - MVI_40775         # night, 1
+    - MVI_40905         # rainy, 2
+    - MVI_39051         # sunny, 1
+    - MVI_39371         # sunny, 1
+    - MVI_39401         # sunny, 1
+    - MVI_40851         # cloudy, 1
+    - MVI_40855         # cloudy, 1

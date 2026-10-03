@@ -40,8 +40,21 @@ def main():
                             help="a track only counts if seen this many frames on each side of the line (0 = off)")
     count_eval.add_argument("--limit", type=int, default=0, help="only run the first N Test sequences (0 = all 40; for smoke tests)")
 
+    lines = sub.add_parser("lines", help="write pipeline/lines/<angle>.json for every angle in pipeline/angles.yaml")
+    lines.add_argument("--from", dest="source", type=Path, default=None,
+                       help="count-eval run whose auto-placed lines are used (default: data/runs/count-eval/bytetrack-conf0.5-img640)")
+    lines.add_argument("--force", action="store_true", help="overwrite existing line files, including hand-edited ones")
+    sub.add_parser("inventory", help="list the 30 s clips per city and angle into data/clips/inventory.csv")
+
     args = parser.parse_args()
-    if args.command == "val-compare":
+    if args.command == "lines":
+        from . import inventory
+        args.source = args.source or inventory.DEFAULT_LINES_RUN
+        inventory.make_lines(args)
+    elif args.command == "inventory":
+        from . import inventory
+        inventory.inventory()
+    elif args.command == "val-compare":
         from . import train as trainer
         from . import val_compare
         args.stock = args.stock or trainer.BASE_WEIGHTS

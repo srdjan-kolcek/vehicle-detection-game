@@ -1,0 +1,19 @@
+{
+  "angle_id": "MVI_40891",
+  "frame_size": [
+    960,
+    540
+  ],
+  "p1": [
+    391.0,
+    80.9
+  ],
+  "p2": [
+    312.2,
+    527.8
+  ],
+  "directions": "both",
+  "placed_by": "auto, count-eval bytetrack-conf0.5-img640",
+  "line_share": 0.672,
+  "note": "best line is crossed by only 67% of moving tracks"
+}
