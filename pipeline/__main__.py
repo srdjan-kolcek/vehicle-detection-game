@@ -49,8 +49,14 @@ def main():
     slicer.add_argument("--force", action="store_true", help="re-encode clips that already exist")
     slicer.add_argument("--limit", type=int, default=0, help="only the first N clips (0 = all; for smoke tests)")
 
+    sub.add_parser("detect", help="track every inventory sequence with the accepted weights (cached in data/clips/raw-tracks)")
+    sub.add_parser("count", help="count line crossings per clip; write timelines/, tracks/ and counts.csv in data/clips")
+
     args = parser.parse_args()
-    if args.command == "lines":
+    if args.command in ("detect", "count"):
+        from . import detect
+        getattr(detect, args.command)(args)
+    elif args.command == "lines":
         from . import inventory
         args.source = args.source or inventory.DEFAULT_LINES_RUN
         inventory.make_lines(args)

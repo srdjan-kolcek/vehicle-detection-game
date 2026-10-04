@@ -14,7 +14,6 @@ Not done for UA-DETRAC (doc 04): perceptual-hash dedupe and scene-cut/shake chec
 a separate non-overlapping window of a fixed camera, so they cannot find anything.
 """
 import csv
-import hashlib
 import subprocess
 from pathlib import Path
 
@@ -23,6 +22,7 @@ import imageio_ffmpeg
 
 from .count_eval import IMAGES
 from .inventory import CLIPS
+from .train import sha256
 
 VIDEO = CLIPS / "video"
 WIDTH, HEIGHT = 960, 540
@@ -35,14 +35,6 @@ ENCODER_ARGS = [
     "-vf", f"scale={WIDTH}:{HEIGHT}", "-an", "-movflags", "+faststart",
     "-map_metadata", "-1", "-fflags", "+bitexact", "-flags:v", "+bitexact",
 ]
-
-
-def sha256(path):
-    digest = hashlib.sha256()
-    with open(path, "rb") as f:
-        for block in iter(lambda: f.read(1 << 20), b""):
-            digest.update(block)
-    return digest.hexdigest()
 
 
 def encode(row, target):
