@@ -45,6 +45,9 @@ def main():
                        help="count-eval run whose auto-placed lines are used (default: data/runs/count-eval/bytetrack-conf0.5-img640)")
     lines.add_argument("--force", action="store_true", help="overwrite existing line files, including hand-edited ones")
     sub.add_parser("inventory", help="list the 30 s clips per city and angle into data/clips/inventory.csv")
+    slicer = sub.add_parser("slice", help="encode every clip in data/clips/inventory.csv to data/clips/video/<clip>.mp4")
+    slicer.add_argument("--force", action="store_true", help="re-encode clips that already exist")
+    slicer.add_argument("--limit", type=int, default=0, help="only the first N clips (0 = all; for smoke tests)")
 
     args = parser.parse_args()
     if args.command == "lines":
@@ -54,6 +57,9 @@ def main():
     elif args.command == "inventory":
         from . import inventory
         inventory.inventory()
+    elif args.command == "slice":
+        from . import slice as slicer
+        slicer.slice_clips(args)
     elif args.command == "val-compare":
         from . import train as trainer
         from . import val_compare
