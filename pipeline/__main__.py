@@ -57,8 +57,13 @@ def main():
     tables.add_argument("--rtp", type=float, default=0.90, help="target return to player for Under and Over (doc 03)")
     tables.add_argument("--rtp-exact", type=float, default=0.80, help="target return to player for Exact (doc 03)")
 
+    sub.add_parser("sign", help="hash and HMAC-sign every verified clip into data/clips/signed.json")
+
     args = parser.parse_args()
-    if args.command == "tables":
+    if args.command == "sign":
+        from . import sign
+        sign.sign(args)
+    elif args.command == "tables":
         from . import tables as table_maker
         table_maker.tables(args)
     elif args.command == "verify":
