@@ -51,9 +51,20 @@ def main():
 
     sub.add_parser("detect", help="track every inventory sequence with the accepted weights (cached in data/clips/raw-tracks)")
     sub.add_parser("count", help="count line crossings per clip; write timelines/, tracks/ and counts.csv in data/clips")
+    sub.add_parser("verify", help="compare every clip's count with the XML ground truth; write verify.csv and verify_summary.csv")
+
+    tables = sub.add_parser("tables", help="line L, probabilities and payout multipliers per city into data/clips/tables.json")
+    tables.add_argument("--rtp", type=float, default=0.90, help="target return to player for Under and Over (doc 03)")
+    tables.add_argument("--rtp-exact", type=float, default=0.80, help="target return to player for Exact (doc 03)")
 
     args = parser.parse_args()
-    if args.command in ("detect", "count"):
+    if args.command == "tables":
+        from . import tables as table_maker
+        table_maker.tables(args)
+    elif args.command == "verify":
+        from . import verify
+        verify.verify(args)
+    elif args.command in ("detect", "count"):
         from . import detect
         getattr(detect, args.command)(args)
     elif args.command == "lines":
