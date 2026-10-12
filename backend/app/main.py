@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from app.api import auth, wallet
+from app.api import auth, bets, wallet
 from app.core.config import get_settings
 from app.core.errors import AppError
 from app.db import get_engine
@@ -34,6 +34,11 @@ _STATUS = {
     "INVALID_CREDENTIALS": 401,
     "USERNAME_TAKEN": 409,
     "REHYDRATE_COOLDOWN": 429,
+    "ROUND_NOT_FOUND": 404,
+    "ROUND_VOIDED": 409,
+    "BET_WINDOW_CLOSED": 409,
+    "BET_ALREADY_PLACED": 409,
+    "BET_ID_CONFLICT": 409,
 }
 
 
@@ -46,6 +51,7 @@ async def app_error_handler(_: Request, exc: AppError) -> JSONResponse:
 
 app.include_router(auth.router, prefix="/api")
 app.include_router(wallet.router, prefix="/api")
+app.include_router(bets.router, prefix="/api")
 
 
 @app.get("/health")
