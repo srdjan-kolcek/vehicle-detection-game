@@ -12,7 +12,8 @@ Multiplier per bet type: floor to 0.01 of r / p, at least 1.01 and at most 50, w
 target RTP of that bet type: 0.90 for Under and Over (house margin 10%, usual for a main market)
 and 0.80 for Exact (house margin 20%, usual for a long-shot market such as a correct score). The
 house therefore keeps a margin on every bet type. The effective RTP p * m is stored, and every bet
-type must land in [r - 1%, r]; otherwise the run stops. data/clips/tables.json holds the tables, the sorted counts and a hash of
+type must land in [r - 1%, r]; otherwise the run stops. It also stops if L leaves Under or Over
+with no clips (a skewed pool such as 3 3 3 3 10), since that bet could never win. data/clips/tables.json holds the tables, the sorted counts and a hash of
 the pool (clip ids and counts) so ingest can tell whether a city's table changed.
 """
 import csv
@@ -54,6 +55,9 @@ def city_table(clips, targets):
     for bet, k in sizes.items():
         rtp = targets[bet]
         table[f"target_rtp_{bet}"] = rtp
+        if k == 0:  # line sits at the edge of the pool, so this bet can never win and has no fair multiplier
+            raise SystemExit(f"{clips[0]['city']}: no clips for {bet} at line L={line} (counts {counts}); "
+                             f"the pool is too skewed, add clips on both sides of L")
         p = k / n
         m = multiplier(p, rtp)
         effective = round(p * m, 4)
