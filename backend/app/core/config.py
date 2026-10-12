@@ -10,6 +10,8 @@ class Settings:
     demo_start_credits: int  # whole credits; the wallet stores minor units (x 100)
     demo_player_password: str
     rehydrate_cooldown_s: int  # 0 = no cooldown
+    # HMAC key the pipeline signed clips with; empty means no clip passes the check.
+    pipeline_signing_key: str = ""
 
 
 def get_settings() -> Settings:
@@ -20,4 +22,5 @@ def get_settings() -> Settings:
         demo_start_credits=int(os.environ.get("DEMO_START_CREDITS", "1000")),
         demo_player_password=os.environ.get("DEMO_PLAYER_PASSWORD", "demo1234"),
         rehydrate_cooldown_s=int(os.environ.get("REHYDRATE_COOLDOWN_S", "0")),
+        pipeline_signing_key=os.environ.get("PIPELINE_SIGNING_KEY", ""),
     )
