@@ -1,0 +1,111 @@
+"""Entry point: python -m pipeline <command>."""
+import argparse
+from pathlib import Path
+
+
+def main():
+    parser = argparse.ArgumentParser(prog="pipeline")
+    sub = parser.add_subparsers(dest="command", required=True)
+    sub.add_parser("yolo-export", help="convert UA-DETRAC XML annotations to a YOLO dataset")
+    sub.add_parser("yolo-preview", help="draw labels on sample frames per weather condition")
+
+    train = sub.add_parser("train", help="fine-tune the YOLOv9 checkpoint on data/yolo")
+    train.add_argument("--weights", type=Path, default=None, help="starting weights (default: weights/yolov9_vehicle_detection_best.pt)")
+    train.add_argument("--epochs", type=int, default=20)
+    train.add_argument("--patience", type=int, default=5, help="stop early after this many epochs without val improvement")
+    train.add_argument("--imgsz", type=int, default=640)
+    train.add_argument("--batch", type=int, default=2, help="2 fits the 4 GB GTX 1650 Ti (4 spills into system RAM and is about 5x slower per image)")
+    train.add_argument("--workers", type=int, default=2, help="data loader processes; each one uses system RAM")
+    train.add_argument("--oversample", type=int, default=2, help="repeat night and rainy train images this many times")
+    train.add_argument("--fraction", type=float, default=1.0, help="use only this fraction of train images (smoke tests)")
+    train.add_argument("--name", help="run folder name under data/runs (default: finetune-<timestamp>)")
+    train.add_argument("--resume", type=Path, help="path to a last.pt to resume an interrupted run")
+
+    compare = sub.add_parser("val-compare", help="compare two weights on the val split, per weather")
+    compare.add_argument("--new", type=Path, required=True, help="fine-tuned weights, e.g. data/runs/<run>/weights/best.pt")
+    compare.add_argument("--stock", type=Path, default=None, help="default: weights/yolov9_vehicle_detection_best.pt")
+
+    count_eval = sub.add_parser("count-eval", help="count vehicles crossing a line on the 40 Test sequences vs XML ground truth")
+    count_eval.add_argument("--weights", type=Path, required=True, help="weights to evaluate, e.g. data/runs/<run>/weights/best.pt")
+    count_eval.add_argument("--tracker", default="bytetrack.yaml",
+                            help="ultralytics tracker yaml, or a file name from pipeline/trackers/ (bytetrack_long.yaml, botsort_reid.yaml)")
+    count_eval.add_argument("--conf", type=float, default=0.5,
+                            help="detection threshold before tracking; 0.1 was tested (also with bytetrack_second_stage.yaml) and did not count better")
+    count_eval.add_argument("--imgsz", type=int, default=640)
+    count_eval.add_argument("--tag", help="output folder under data/runs/count-eval (default: <tracker>-conf<conf>-img<imgsz>)")
+    count_eval.add_argument("--ref-point", type=float, default=0.75,
+                            help="counting point on the box, as a fraction of its height from the top (1 = bottom edge, 0.5 = centre); "
+                                 "0.75 counted best, the bottom edge is pulled down by reflections on wet roads")
+    count_eval.add_argument("--min-side-frames", type=int, default=0,
+                            help="a track only counts if seen this many frames on each side of the line (0 = off)")
+    count_eval.add_argument("--limit", type=int, default=0, help="only run the first N Test sequences (0 = all 40; for smoke tests)")
+
+    lines = sub.add_parser("lines", help="write pipeline/lines/<angle>.json for every angle in pipeline/angles.yaml")
+    lines.add_argument("--from", dest="source", type=Path, default=None,
+                       help="count-eval run whose auto-placed lines are used (default: data/runs/count-eval/bytetrack-conf0.5-img640)")
+    lines.add_argument("--force", action="store_true", help="overwrite existing line files, including hand-edited ones")
+    sub.add_parser("inventory", help="list the 30 s clips per city and angle into data/clips/inventory.csv")
+    slicer = sub.add_parser("slice", help="encode every clip in data/clips/inventory.csv to data/clips/video/<clip>.mp4")
+    slicer.add_argument("--force", action="store_true", help="re-encode clips that already exist")
+    slicer.add_argument("--limit", type=int, default=0, help="only the first N clips (0 = all; for smoke tests)")
+
+    sub.add_parser("detect", help="track every inventory sequence with the accepted weights (cached in data/clips/raw-tracks)")
+    sub.add_parser("count", help="count line crossings per clip; write timelines/, tracks/ and counts.csv in data/clips")
+    sub.add_parser("verify", help="compare every clip's count with the XML ground truth; write verify.csv and verify_summary.csv")
+
+    tables = sub.add_parser("tables", help="line L, probabilities and payout multipliers per city into data/clips/tables.json")
+    tables.add_argument("--rtp", type=float, default=0.90, help="target return to player for Under and Over (doc 03)")
+    tables.add_argument("--rtp-exact", type=float, default=0.80, help="target return to player for Exact (doc 03)")
+
+    sub.add_parser("sign", help="hash and HMAC-sign every verified clip into data/clips/signed.json")
+
+    sub.add_parser("ingest", help="copy signed clips to media/ and write clips, lines and payout tables to Postgres (run in docker)")
+
+    args = parser.parse_args()
+    if args.command == "ingest":
+        from . import ingest
+        ingest.ingest(args)
+    elif args.command == "sign":
+        from . import sign
+        sign.sign(args)
+    elif args.command == "tables":
+        from . import tables as table_maker
+        table_maker.tables(args)
+    elif args.command == "verify":
+        from . import verify
+        verify.verify(args)
+    elif args.command in ("detect", "count"):
+        from . import detect
+        getattr(detect, args.command)(args)
+    elif args.command == "lines":
+        from . import inventory
+        args.source = args.source or inventory.DEFAULT_LINES_RUN
+        inventory.make_lines(args)
+    elif args.command == "inventory":
+        from . import inventory
+        inventory.inventory()
+    elif args.command == "slice":
+        from . import slice as slicer
+        slicer.slice_clips(args)
+    elif args.command == "val-compare":
+        from . import train as trainer
+        from . import val_compare
+        args.stock = args.stock or trainer.BASE_WEIGHTS
+        val_compare.compare(args)
+    elif args.command == "count-eval":
+        from . import count_eval as counter
+        counter.evaluate(args)
+    elif args.command == "yolo-export":
+        from . import yolo_export
+        yolo_export.export()
+    elif args.command == "yolo-preview":
+        from . import yolo_export
+        yolo_export.preview()
+    else:
+        from . import train as trainer
+        args.weights = args.weights or trainer.BASE_WEIGHTS
+        trainer.train(args)
+
+
+if __name__ == "__main__":
+    main()

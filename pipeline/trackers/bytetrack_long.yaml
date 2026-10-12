@@ -1,0 +1,10 @@
+# ByteTrack defaults, except lost tracks are kept 3x longer. ultralytics scales track_buffer to a
+# fixed 30 fps, so on 25 fps UA-DETRAC 30 frames is 1.2 s; 90 keeps a lost vehicle for 3.6 s,
+# long enough to survive a bus passing in front of it or a few dark frames at night.
+tracker_type: bytetrack
+track_high_thresh: 0.25
+track_low_thresh: 0.1
+new_track_thresh: 0.25
+track_buffer: 90
+match_thresh: 0.8
+fuse_score: True

@@ -1,0 +1,19 @@
+{
+  "angle_id": "MVI_40712",
+  "frame_size": [
+    960,
+    540
+  ],
+  "p1": [
+    10.6,
+    239.1
+  ],
+  "p2": [
+    892.7,
+    316.3
+  ],
+  "directions": "both",
+  "placed_by": "auto, count-eval bytetrack-conf0.5-img640",
+  "line_share": 0.812,
+  "note": ""
+}
