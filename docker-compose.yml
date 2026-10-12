@@ -45,6 +45,20 @@ services:
       timeout: 5s
       retries: 10
 
+  # Offline video pipeline (doc 04). Not started by "docker compose up"; run one command at a time:
+  #   docker compose run --rm pipeline python -m pipeline ingest
+  pipeline:
+    build: ./pipeline
+    profiles: ["pipeline"]
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./data:/app/data
+      - ./weights:/app/weights:ro
+      - media:/app/media
+
   frontend:
     build: ./frontend
     depends_on:

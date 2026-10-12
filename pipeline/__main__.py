@@ -59,8 +59,13 @@ def main():
 
     sub.add_parser("sign", help="hash and HMAC-sign every verified clip into data/clips/signed.json")
 
+    sub.add_parser("ingest", help="copy signed clips to media/ and write clips, lines and payout tables to Postgres (run in docker)")
+
     args = parser.parse_args()
-    if args.command == "sign":
+    if args.command == "ingest":
+        from . import ingest
+        ingest.ingest(args)
+    elif args.command == "sign":
         from . import sign
         sign.sign(args)
     elif args.command == "tables":
