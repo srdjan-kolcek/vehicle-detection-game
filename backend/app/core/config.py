@@ -12,6 +12,8 @@ class Settings:
     rehydrate_cooldown_s: int  # 0 = no cooldown
     # HMAC key the pipeline signed clips with; empty means no clip passes the check.
     pipeline_signing_key: str = ""
+    # Run the per-city round loops in this process.
+    round_engine_enabled: bool = True
 
 
 def get_settings() -> Settings:
@@ -23,4 +25,5 @@ def get_settings() -> Settings:
         demo_player_password=os.environ.get("DEMO_PLAYER_PASSWORD", "demo1234"),
         rehydrate_cooldown_s=int(os.environ.get("REHYDRATE_COOLDOWN_S", "0")),
         pipeline_signing_key=os.environ.get("PIPELINE_SIGNING_KEY", ""),
+        round_engine_enabled=os.environ.get("ROUND_ENGINE_ENABLED", "true").lower() == "true",
     )

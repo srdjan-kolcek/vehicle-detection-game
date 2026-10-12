@@ -12,6 +12,7 @@ from sqlalchemy import (
     Numeric,
     String,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -30,6 +31,13 @@ class Round(Base):
             name="result_outcome_valid",
         ),
         Index("ix_rounds_city_id_status", "city_id", "status"),
+        # At most one unfinished round per city.
+        Index(
+            "uq_rounds_city_id_open",
+            "city_id",
+            unique=True,
+            postgresql_where=text("status IN ('BETTING','LOCKED','PLAYBACK')"),
+        ),
     )
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
