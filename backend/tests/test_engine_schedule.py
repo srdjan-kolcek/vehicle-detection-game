@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from app.engine.rounds import outcome_for
+from app.payout import outcome_for
 from app.engine.schedule import PhaseDurations, schedule_from
 
 START = datetime(2026, 10, 12, 12, 0, tzinfo=timezone.utc)

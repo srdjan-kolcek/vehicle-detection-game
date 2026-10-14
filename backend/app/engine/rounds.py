@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.engine.schedule import PHASE_DURATIONS_KEY, PhaseDurations, schedule_from
 from app.engine.settlement import refund_bets, settle_bets
 from app.models import AppConfig, City, Clip, PayoutTable, Round
+from app.payout import outcome_for
 from app.rng.audit import audit_row
 from app.rng.draw import EmptyPoolError
 from app.rng.pool import draw_for_city
@@ -18,14 +19,6 @@ OPEN_STATUSES = ("BETTING", "LOCKED", "PLAYBACK")
 
 class CannotOpenRound(Exception):
     """The city cannot start a round right now (inactive, no drawable clips, no payout table)."""
-
-
-def outcome_for(count: int, line: int) -> str:
-    if count < line:
-        return "under"
-    if count == line:
-        return "exact"
-    return "over"
 
 
 async def load_durations(session: AsyncSession) -> PhaseDurations:

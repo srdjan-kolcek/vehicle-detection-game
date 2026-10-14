@@ -10,6 +10,7 @@ from app.core.config import Settings
 from app.core.security import hash_password
 from app.engine.schedule import PHASE_DURATIONS_KEY, PhaseDurations
 from app.models import AppConfig, City, Player, WalletAccount
+from app.payout import TARGET_RTP_KEY, TargetRtp
 from app.wallet import VirtualWallet
 
 CITIES_FILE = Path(__file__).with_name("cities.yaml")
@@ -27,7 +28,10 @@ async def seed_cities(session: AsyncSession) -> int:
 
 async def seed_app_config(session: AsyncSession) -> int:
     """Add the default config values that are missing. Edited values are kept. Returns how many were added."""
-    rows = [{"key": PHASE_DURATIONS_KEY, "value": PhaseDurations().as_config()}]
+    rows = [
+        {"key": PHASE_DURATIONS_KEY, "value": PhaseDurations().as_config()},
+        {"key": TARGET_RTP_KEY, "value": TargetRtp().as_config()},
+    ]
     result = await session.execute(
         insert(AppConfig).values(rows).on_conflict_do_nothing(index_elements=["key"]).returning(AppConfig.key)
     )

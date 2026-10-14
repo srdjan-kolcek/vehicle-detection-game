@@ -80,8 +80,9 @@ async def test_seeding_again_keeps_balances_and_edited_cities(session):
 
 
 async def test_seed_adds_phase_durations_once_and_keeps_edits(session):
-    assert await seed_app_config(session) == 1
+    assert await seed_app_config(session) == 2
     await session.commit()
+    assert (await session.get(AppConfig, "target_rtp")).value == {"under_over": 0.90, "exact": 0.80}
     row = await session.get(AppConfig, "phase_durations")
     assert row.value == {"betting": 15, "locked": 5, "playback": 30, "settle": 5}
 
