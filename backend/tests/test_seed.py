@@ -4,8 +4,8 @@ from sqlalchemy import func, select, update
 from app import seed
 from app.core.config import Settings
 from app.core.security import verify_password
-from app.models import City, LedgerEntry, Player, WalletAccount
-from app.seed import DEMO_USERNAMES, seed_cities, seed_players
+from app.models import AppConfig, City, LedgerEntry, Player, WalletAccount
+from app.seed import DEMO_USERNAMES, seed_app_config, seed_cities, seed_players
 
 pytestmark = pytest.mark.asyncio
 
@@ -77,6 +77,21 @@ async def test_seeding_again_keeps_balances_and_edited_cities(session):
     balances = set(await session.scalars(select(WalletAccount.balance)))
     assert balances == {42}
     assert await session.scalar(select(City.line_l).where(City.slug == "berlin")) == 17
+
+
+async def test_seed_adds_phase_durations_once_and_keeps_edits(session):
+    assert await seed_app_config(session) == 2
+    await session.commit()
+    assert (await session.get(AppConfig, "target_rtp")).value == {"under_over": 0.90, "exact": 0.80}
+    row = await session.get(AppConfig, "phase_durations")
+    assert row.value == {"betting": 15, "locked": 5, "playback": 30, "settle": 5}
+
+    row.value = {"betting": 20, "locked": 5, "playback": 30, "settle": 5}
+    await session.commit()
+    assert await seed_app_config(session) == 0
+    await session.commit()
+    await session.refresh(row)
+    assert row.value["betting"] == 20
 
 
 async def test_seed_only_adds_a_newly_listed_demo_player(session, monkeypatch):

@@ -209,8 +209,8 @@ async def test_concurrent_bets_cannot_overdraw(migrated_engine, async_engine):
         second_round = conn.execute(
             text(
                 "INSERT INTO rounds (city_id, clip_id, status, payout_table_id, betting_opens_at, "
-                "locks_at, playback_starts_at) SELECT city_id, clip_id, status, payout_table_id, "
-                "now(), now(), now() FROM rounds LIMIT 1 RETURNING id"
+                "locks_at, playback_starts_at) SELECT city_id, clip_id, 'SETTLED', payout_table_id, "
+                "now(), now(), now() FROM rounds LIMIT 1 RETURNING id"  # a city has one open round at most
             )
         ).scalar_one()
         second_bet = _insert_bet(conn, second_round, player_id)

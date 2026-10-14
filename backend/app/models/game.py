@@ -12,6 +12,7 @@ from sqlalchemy import (
     Numeric,
     String,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -30,6 +31,13 @@ class Round(Base):
             name="result_outcome_valid",
         ),
         Index("ix_rounds_city_id_status", "city_id", "status"),
+        # At most one unfinished round per city.
+        Index(
+            "uq_rounds_city_id_open",
+            "city_id",
+            unique=True,
+            postgresql_where=text("status IN ('BETTING','LOCKED','PLAYBACK')"),
+        ),
     )
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
@@ -80,6 +88,8 @@ class RngAudit(Base):
     round_id: Mapped[int] = mapped_column(ForeignKey("rounds.id"), nullable=False)
     city_id: Mapped[int] = mapped_column(ForeignKey("cities.id"), nullable=False)
     pool_size: Mapped[int] = mapped_column(Integer, nullable=False)
+    # Every drawable clip id at draw time, sorted, so the draw can be replayed after the pool changes.
+    pool_ids: Mapped[list[int]] = mapped_column(ARRAY(Integer), nullable=False)
     cooldown_ids: Mapped[list[int]] = mapped_column(ARRAY(Integer), nullable=False)
     chosen_clip_id: Mapped[int] = mapped_column(ForeignKey("clips.id"), nullable=False)
     # Raw CSPRNG output as a decimal string (may exceed 64 bits).

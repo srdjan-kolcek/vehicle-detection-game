@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.db import get_engine
-from app.seed import seed_cities, seed_players
+from app.seed import seed_app_config, seed_cities, seed_players
 
 
 async def main() -> None:
@@ -15,10 +15,11 @@ async def main() -> None:
         async with AsyncSession(engine, expire_on_commit=False) as session:
             cities = await seed_cities(session)
             players = await seed_players(session, settings)
+            config = await seed_app_config(session)
             await session.commit()
     finally:
         await engine.dispose()
-    print(f"Seed done: {cities} cities added, {players} demo players added.")
+    print(f"Seed done: {cities} cities added, {players} demo players added, {config} config values added.")
 
 
 # psycopg's async mode cannot run on the default Windows event loop, so ask for the selector loop there.

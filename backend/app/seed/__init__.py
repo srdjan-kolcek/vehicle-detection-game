@@ -8,7 +8,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings
 from app.core.security import hash_password
-from app.models import City, Player, WalletAccount
+from app.engine.schedule import PHASE_DURATIONS_KEY, PhaseDurations
+from app.models import AppConfig, City, Player, WalletAccount
+from app.payout import TARGET_RTP_KEY, TargetRtp
 from app.wallet import VirtualWallet
 
 CITIES_FILE = Path(__file__).with_name("cities.yaml")
@@ -20,6 +22,18 @@ async def seed_cities(session: AsyncSession) -> int:
     rows = yaml.safe_load(CITIES_FILE.read_text(encoding="utf-8"))["cities"]
     result = await session.execute(
         insert(City).values(rows).on_conflict_do_nothing(index_elements=["slug"]).returning(City.id)
+    )
+    return len(result.all())
+
+
+async def seed_app_config(session: AsyncSession) -> int:
+    """Add the default config values that are missing. Edited values are kept. Returns how many were added."""
+    rows = [
+        {"key": PHASE_DURATIONS_KEY, "value": PhaseDurations().as_config()},
+        {"key": TARGET_RTP_KEY, "value": TargetRtp().as_config()},
+    ]
+    result = await session.execute(
+        insert(AppConfig).values(rows).on_conflict_do_nothing(index_elements=["key"]).returning(AppConfig.key)
     )
     return len(result.all())
 
