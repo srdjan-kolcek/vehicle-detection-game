@@ -177,12 +177,17 @@ async def test_city_that_cannot_play_raises(session, sessions, setup, reason):
 async def test_city_that_cannot_play_waits_and_retries(session, sessions):
     city = await _setup_city(session, clips=0)
     time = FakeTime()
-    task = asyncio.create_task(_loop(sessions, city, time, retry_s=10).run())
-    await asyncio.sleep(0.3)
-    task.cancel()
-    await asyncio.gather(task, return_exceptions=True)
-    assert len(time.sleeps) >= 2
-    assert set(time.sleeps) == {10}
+
+    async def sleep(seconds):
+        # Stop the loop at a sleep, never mid-query: cancelling psycopg inside a query can hang on Windows.
+        if len(time.sleeps) == 3:
+            raise asyncio.CancelledError
+        await time.sleep(seconds)
+
+    loop = CityLoop(sessions, city.id, KEY, clock=time.clock, sleep=sleep, retry_s=10)
+    with pytest.raises(asyncio.CancelledError):
+        await loop.run()
+    assert time.sleeps == [10, 10, 10]
     async with sessions() as s:
         assert await s.scalar(select(Round)) is None
 
@@ -303,21 +308,19 @@ async def test_failure_voids_the_round_and_the_loop_carries_on(session, sessions
         return await real_settle(*args, **kwargs)
 
     monkeypatch.setattr(loop_module, "settle_round", flaky_settle)
-    events, done = [], asyncio.Event()
+    events = []
 
     async def record(event):
         events.append(event.phase)
         if event.phase == "SETTLE":
-            done.set()
+            raise asyncio.CancelledError  # stop here, between queries (see the retry test above)
 
     time = FakeTime()
     loop = CityLoop(sessions, city.id, KEY, clock=time.clock, sleep=time.sleep, on_phase=record, retry_s=10)
-    task = asyncio.create_task(loop.run())
-    await asyncio.wait_for(done.wait(), timeout=10)
-    task.cancel()
-    await asyncio.gather(task, return_exceptions=True)
+    with pytest.raises(asyncio.CancelledError):
+        await asyncio.wait_for(loop.run(), timeout=10)
 
-    assert events[:8] == ["BETTING", "LOCKED", "PLAYBACK", "VOIDED", "BETTING", "LOCKED", "PLAYBACK", "SETTLE"]
+    assert events[:8] ==["BETTING", "LOCKED", "PLAYBACK", "VOIDED", "BETTING", "LOCKED", "PLAYBACK", "SETTLE"]
     async with sessions() as s:
         statuses = list(await s.scalars(select(Round.status).order_by(Round.id)))
     assert statuses[:2] == ["VOIDED", "SETTLED"]

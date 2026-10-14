@@ -5,9 +5,12 @@ from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.engine.schedule import PHASE_DURATIONS_KEY, PhaseDurations, schedule_from
+from app.engine.settlement import refund_bets, settle_bets
 from app.models import AppConfig, City, Clip, PayoutTable, Round
 from app.rng.draw import EmptyPoolError
 from app.rng.pool import draw_for_city
+from app.wallet.base import WalletAdapter
+from app.wallet.virtual import VirtualWallet
 
 OPEN_STATUSES = ("BETTING", "LOCKED", "PLAYBACK")
 
@@ -71,11 +74,13 @@ async def advance(session: AsyncSession, round_id: int, from_status: str, to_sta
     return result.rowcount == 1
 
 
-async def settle_round(session: AsyncSession, round_id: int, now: datetime) -> Round | None:
-    """Write the result of a round in PLAYBACK: the clip's stored, signed count against the city line.
+async def settle_round(
+    session: AsyncSession, round_id: int, now: datetime, wallet: WalletAdapter | None = None
+) -> Round | None:
+    """Write the result of a round in PLAYBACK (the clip's stored, signed count against the city line)
+    and settle its bets. The wallet defaults to the demo VirtualWallet on this session.
 
     Returns the settled round, or None when it was not in PLAYBACK (already settled or voided).
-    Bet payouts are added here by the settlement step.
     """
     round_ = await session.scalar(
         select(Round).where(Round.id == round_id).with_for_update().execution_options(populate_existing=True)
@@ -89,20 +94,27 @@ async def settle_round(session: AsyncSession, round_id: int, now: datetime) -> R
     round_.status = "SETTLED"
     round_.settled_at = now
     await session.flush()
+    await settle_bets(session, wallet or VirtualWallet(session), round_id, round_.result_outcome)
     return round_
 
 
-async def void_round(session: AsyncSession, round_id: int, now: datetime) -> bool:
-    """Void a round that is still open; settled_at records when it was closed. False if it was not open.
+async def void_round(
+    session: AsyncSession, round_id: int, now: datetime, wallet: WalletAdapter | None = None
+) -> bool:
+    """Void a round that is still open and refund every stake; settled_at records when it was closed.
 
-    Stake refunds are added here by the settlement step.
+    False if it was not open (nothing changed). The update waits for bets still being saved, so their
+    stakes are refunded too.
     """
     result = await session.execute(
         update(Round)
         .where(Round.id == round_id, Round.status.in_(OPEN_STATUSES))
         .values(status="VOIDED", settled_at=now)
     )
-    return result.rowcount == 1
+    if result.rowcount != 1:
+        return False
+    await refund_bets(session, wallet or VirtualWallet(session), round_id)
+    return True
 
 
 async def open_round_of(session: AsyncSession, city_id: int) -> Round | None:
