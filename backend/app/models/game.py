@@ -88,6 +88,8 @@ class RngAudit(Base):
     round_id: Mapped[int] = mapped_column(ForeignKey("rounds.id"), nullable=False)
     city_id: Mapped[int] = mapped_column(ForeignKey("cities.id"), nullable=False)
     pool_size: Mapped[int] = mapped_column(Integer, nullable=False)
+    # Every drawable clip id at draw time, sorted, so the draw can be replayed after the pool changes.
+    pool_ids: Mapped[list[int]] = mapped_column(ARRAY(Integer), nullable=False)
     cooldown_ids: Mapped[list[int]] = mapped_column(ARRAY(Integer), nullable=False)
     chosen_clip_id: Mapped[int] = mapped_column(ForeignKey("clips.id"), nullable=False)
     # Raw CSPRNG output as a decimal string (may exceed 64 bits).

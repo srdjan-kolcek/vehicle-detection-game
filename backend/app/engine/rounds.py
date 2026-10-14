@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.engine.schedule import PHASE_DURATIONS_KEY, PhaseDurations, schedule_from
 from app.engine.settlement import refund_bets, settle_bets
 from app.models import AppConfig, City, Clip, PayoutTable, Round
+from app.rng.audit import audit_row
 from app.rng.draw import EmptyPoolError
 from app.rng.pool import draw_for_city
 from app.wallet.base import WalletAdapter
@@ -36,7 +37,7 @@ async def load_durations(session: AsyncSession) -> PhaseDurations:
 async def open_round(
     session: AsyncSession, city: City, durations: PhaseDurations, now: datetime, signing_key: str
 ) -> Round:
-    """Draw a clip and insert a new BETTING round whose deadlines start at `now`.
+    """Draw a clip and insert a new BETTING round whose deadlines start at `now`, plus its rng_audit row.
 
     Raises CannotOpenRound when the city is inactive, has no active payout table or no drawable clip.
     """
@@ -62,6 +63,8 @@ async def open_round(
         playback_starts_at=schedule.playback_starts_at,
     )
     session.add(round_)
+    await session.flush()
+    session.add(audit_row(round_.id, city.id, draw))
     await session.flush()
     return round_
 

@@ -182,8 +182,9 @@ def test_rng_audit_is_append_only(migrated_engine, statement):
         round_id, _ = _seed_round(conn)
         conn.execute(
             text(
-                "INSERT INTO rng_audit (round_id, city_id, pool_size, cooldown_ids, chosen_clip_id, raw_random) "
-                "SELECT id, city_id, 35, ARRAY[]::integer[], clip_id, '42' FROM rounds WHERE id = :r"
+                "INSERT INTO rng_audit (round_id, city_id, pool_size, pool_ids, cooldown_ids, chosen_clip_id, "
+                "raw_random) SELECT id, city_id, 1, ARRAY[clip_id], ARRAY[]::integer[], clip_id, '42' "
+                "FROM rounds WHERE id = :r"
             ),
             {"r": round_id},
         )

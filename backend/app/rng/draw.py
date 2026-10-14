@@ -24,6 +24,7 @@ class Draw:
     raw_random: int
     pool_size: int
     cooldown_ids: list[int]
+    pool_ids: list[int]  # the whole pool at draw time, sorted; stored so the draw can be replayed
 
 
 class EmptyPoolError(Exception):
@@ -69,4 +70,6 @@ def draw_clip(
             cooldown.append(clip_id)
     candidates = [c for c in pool if c not in cooldown]
     index, raw = uniform_index(len(candidates), randbits)
-    return Draw(clip_id=candidates[index], raw_random=raw, pool_size=len(pool), cooldown_ids=cooldown)
+    return Draw(
+        clip_id=candidates[index], raw_random=raw, pool_size=len(pool), cooldown_ids=cooldown, pool_ids=pool
+    )
